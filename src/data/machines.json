@@ -1,0 +1,39 @@
+[
+    {
+      "name": "Mixer 3000",
+      "hourly_cost": 14.0,
+      "nominal_power_kw": 9.0,
+      "base_efficiency": 0.95,
+      "shifts_per_day": 2,
+      "hours_per_shift": 8,
+      "power_profile": { "idle": 0.1, "load": 0.5, "produce": 0.9 },
+      "internal_storage_capacity": {
+        "Flour 00": 80.0,
+        "Butter": 50.0,
+        "kg": 100.0
+      },
+      "material_loading_rate": {
+        "Flour 00": 2.5,
+        "Butter": 1.8,
+        "Sugar": 2.0,
+        "Milk": 1.2,
+        "kg": 2.0
+      }
+    },
+    {
+      "name": "Oven Line 1",
+      "hourly_cost": 18.0,
+      "nominal_power_kw": 12.0,
+      "base_efficiency": 0.92,
+      "shifts_per_day": 2,
+      "hours_per_shift": 8,
+      "power_profile": { "idle": 0.15, "load": 0.6, "produce": 1.0 },
+      "internal_storage_capacity": {
+        "piece": 80.0
+      },
+      "material_loading_rate": {
+        "piece": 1.0
+      }
+    }
+  ]
+  

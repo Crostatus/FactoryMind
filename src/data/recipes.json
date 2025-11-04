@@ -1,0 +1,48 @@
+[
+    {
+      "name": "Butter Biscuits",
+      "ingredients": {
+        "Flour 00": 2.5,
+        "Butter": 1.0,
+        "Sugar": 1.2,
+        "Eggs": 3,
+        "Milk": 0.5
+      },
+      "output_quantity": 100,
+      "output_unit": "piece"
+    },
+    {
+      "name": "Shortbread Cookies",
+      "ingredients": {
+        "Flour 00": 3.0,
+        "Butter": 1.5,
+        "Sugar": 1.0,
+        "Eggs": 2
+      },
+      "output_quantity": 120,
+      "output_unit": "piece"
+    },
+    {
+      "name": "Chocolate Cream",
+      "ingredients": {
+        "Milk": 2.0,
+        "Sugar": 0.8,
+        "Butter": 0.2
+      },
+      "output_quantity": 2.5,
+      "output_unit": "kg"
+    },
+    {
+      "name": "Croissant Dough",
+      "ingredients": {
+        "Flour 00": 5.0,
+        "Butter": 2.0,
+        "Sugar": 0.5,
+        "Eggs": 3,
+        "Milk": 1.0
+      },
+      "output_quantity": 6.0,
+      "output_unit": "kg"
+    }
+  ]
+  
