@@ -1,5 +1,5 @@
 from math import ceil
-from entities.units import Unit
+from src.entities.units import Unit
 
 class MachineRecipeSetting:
     """

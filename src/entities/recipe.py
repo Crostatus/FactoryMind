@@ -1,5 +1,5 @@
-from entities.raw_material import RawMaterial
-from entities.units import Unit
+from src.entities.raw_material import RawMaterial
+from src.entities.units import Unit
 
 class Recipe:
     """

@@ -1,3 +1,7 @@
+from src.entities.machine_recipe_setting import MachineRecipeSetting
+from src.entities.raw_material import RawMaterial
+
+
 class Machine:
     def __init__(
         self,
