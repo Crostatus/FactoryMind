@@ -5,7 +5,7 @@ class Unit(Enum):
     KILOGRAM = "kg"
     LITER = "L"
     MILLILITER = "mL"
-    PIECE = "pc"
+    PIECE = "piece"
     
     def __str__(self):
         """Human-readable representation (so print(Unit.KILOGRAM) -> 'kg')."""

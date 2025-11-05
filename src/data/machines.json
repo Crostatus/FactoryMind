@@ -34,6 +34,21 @@
       "material_loading_rate": {
         "piece": 1.0
       }
+    },
+    {
+      "name": "Packaging Unit A",
+      "hourly_cost": 18.0,
+      "nominal_power_kw": 12.0,
+      "base_efficiency": 0.92,
+      "shifts_per_day": 2,
+      "hours_per_shift": 8,
+      "power_profile": { "idle": 0.15, "load": 0.6, "produce": 1.0 },
+      "internal_storage_capacity": {
+        "piece": 80.0
+      },
+      "material_loading_rate": {
+        "piece": 1.0
+      }
     }
   ]
   
