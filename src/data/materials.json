@@ -4,35 +4,35 @@
       "unit": "kg",
       "unit_cost": 0.85,
       "stock_quantity": 500.0,
-      "prep_time": 0.05
+      "prep_time": 5
     },
     {
       "name": "Butter",
       "unit": "kg",
       "unit_cost": 4.20,
       "stock_quantity": 150.0,
-      "prep_time": 0.10
+      "prep_time": 0
     },
     {
       "name": "Sugar",
       "unit": "kg",
       "unit_cost": 1.10,
       "stock_quantity": 200.0,
-      "prep_time": 0.04
+      "prep_time": 4
     },
     {
       "name": "Eggs",
       "unit": "piece",
       "unit_cost": 0.22,
       "stock_quantity": 300.0,
-      "prep_time": 0.03
+      "prep_time": 3
     },
     {
       "name": "Milk",
       "unit": "L",
       "unit_cost": 0.90,
       "stock_quantity": 250.0,
-      "prep_time": 0.02
+      "prep_time": 2
     }
   ]
   
