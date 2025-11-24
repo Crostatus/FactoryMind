@@ -64,8 +64,7 @@ class Machine:
         hours_per_shift: int,
         power_profile: dict[MachinePowerProfile, float] | None = None,
         storage: Optional[MachineStorage] = None,        
-        loading_rates: Optional[MachineLoadingRates] = None
-        #material_loading_rate: dict[str, float] | None = None,      # per unità o materiale
+        loading_rates: Optional[MachineLoadingRates] = None,
     ):
         self.name = name
         self.hourly_cost = hourly_cost
@@ -76,7 +75,6 @@ class Machine:
         self.power_profile = PowerProfile(power_profile)        
         self.storage = storage or MachineStorage()        
         self.loading_rates = loading_rates or MachineLoadingRates()
-        #self.material_loading_rate = material_loading_rate or {}
         self.settings: list["MachineRecipeSetting"] = []  # collegamenti ricette -> macchina
 
     # --- associations --------------------------------------------------------
@@ -99,10 +97,10 @@ class Machine:
             3️ default = 0
         """
         rate = 0.0
-        if material.name in self.material_loading_rate:
-            rate = self.material_loading_rate[material.name]
-        elif material.unit.value in self.material_loading_rate:
-            rate = self.material_loading_rate[material.unit.value]
+        if material.name in self.loading_rates.by_material:
+            rate = self.loading_rates.by_material[material.name].rate
+        elif material.unit in self.loading_rates.by_unit:
+            rate = self.loading_rates.by_unit[material.unit].rate
         return quantity * rate
 
     # --- hybrid storage logic ------------------------------------------------
@@ -148,17 +146,18 @@ class Machine:
         for k, v in self.power_profile.items.items():            
             lines.append(f"      {k}: {str_quant(v*100, Unit.PERCENT)} of nominal")
      
-        if self.material_loading_rate:
-            lines.append("  - Loading rates:")
-            for key, value in self.material_loading_rate.items():
-                lines.append(f"      {key}: {str_quant(value, Unit.SECONDS)}/unit")
+        lines.append("  - Loading rates:")
+        for key, value in self.loading_rates.by_unit.items():
+             lines.append(f"      {key}: {value}")
+        for key, value in self.loading_rates.by_material.items():
+             lines.append(f"      {key}: {value}")
 
         lines.append("  - Storage capacity:")
         for key, value in self.storage.by_unit.items():
             lines.append(f"      {str_quant(value, key)}")
 
         for key, value in self.storage.by_material.items():
-            lines.append(f"      {key}: {str_quant(value, key)}")
+            lines.append(f"      {key}: {value}")
         
 
         return "\n".join(lines)

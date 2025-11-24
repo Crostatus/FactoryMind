@@ -4,10 +4,11 @@ from src.entities.power_profile import MachinePowerProfile
 from src.entities.units import Unit
 from src.entities.raw_material import RawMaterial
 from src.entities.recipe import Recipe
-from src.entities.machine import Machine, MachineStorage, PowerProfile
+from src.entities.machine import Machine, MachineStorage, PowerProfile, MachineLoadingRates, LoadingRate
 from src.entities.machine_recipe_setting import MachineRecipeSetting
 from src.utils.logging import log
 from datetime import datetime
+from src.schemas import MaterialSchema
 
 class FactoryDataLoader:
     """
@@ -28,7 +29,7 @@ class FactoryDataLoader:
         """Load all data in correct dependency order."""              
         log.info("Going to load factory data...")
                 
-        self._load_materials()
+        self._load_materials_pydantic()
         self._load_recipes()
         self._load_machines()
         self._load_machine_recipe_settings()
@@ -88,6 +89,50 @@ class FactoryDataLoader:
             log.error("No materials loaded. Please check the data files")
         else:
             log.info(f"Loaded {loaded} materials ({skipped} skipped)")
+
+    def _load_materials_pydantic(self):
+        """
+        Example of robust loading using Pydantic.
+        """
+        path = self.data_dir / "materials.json"
+        log.debug(f"Loading materials (Pydantic) from '{path.name}' ...")
+        
+        with open(path, "r") as f:
+            data = json.load(f)
+
+        loaded = 0
+        skipped = 0
+
+        for i, item in enumerate(data, start=1):
+            try:
+                # 1. Validate and Parse with Pydantic
+                # This automatically checks types, constraints, and missing fields.
+                schema = MaterialSchema(**item)
+
+                # 2. Check logical duplicates (business logic)
+                if schema.name in self.materials:
+                    raise ValueError(f"Duplicate material '{schema.name}'")
+
+                # 3. Create Entity (Domain Object)
+                # We map the validated schema back to our internal entity.
+                material = RawMaterial(
+                    name=schema.name,
+                    unit=Unit(schema.unit),
+                    unit_cost=schema.unit_cost,
+                    stock_quantity=schema.stock_quantity,
+                    prep_time=schema.prep_time,
+                )
+                
+                self.materials[material.name] = material
+                loaded += 1
+                log.trace(f"Loaded {material}")
+
+            except Exception as e:
+                skipped += 1
+                # Pydantic errors are very descriptive!
+                log.warn(f"Skipped material #{i}: {e}")
+        
+        log.success(f"[Pydantic] Loaded {loaded} materials ({skipped} skipped)")
 
 
     def _load_recipes(self):
@@ -230,7 +275,9 @@ class FactoryDataLoader:
                 if not isinstance(loading_rate_dict, dict):
                     raise ValueError(f"Machine '{name}' material_loading_rate must be a dict")
 
-                valid_rates = {}
+                by_unit_rates = {}
+                by_material_rates = {}
+                
                 for key, value in loading_rate_dict.items():
                     key_str = str(key).strip()
                     if not isinstance(value, (int, float)) or value <= 0:
@@ -243,7 +290,8 @@ class FactoryDataLoader:
                             raise ValueError(
                                 f"Machine '{name}' loading rate for unit 'piece' must be integer (got {value})"
                             )
-                        valid_rates[unit] = float(value)
+                        # Create LoadingRate object
+                        by_unit_rates[unit] = LoadingRate(rate=float(value), quant=Unit.SECONDS, over_quant=unit)
                     else:
                         # interpret as material name
                         if key_str not in self.materials:
@@ -255,21 +303,14 @@ class FactoryDataLoader:
                                 raise ValueError(
                                     f"Machine '{name}' loading rate for material '{key_str}' uses unit 'piece' "
                                     f"but non-integer value {value}"
-                                )
-                        valid_rates[key_str] = float(value)
+                                )                        
+                        over_quant = Unit.PIECE
+                        if key_str in self.materials:
+                            over_quant = self.materials[key_str].unit
+                        
+                        by_material_rates[key_str] = LoadingRate(rate=float(value), quant=Unit.SECONDS, over_quant=over_quant)
 
-                        # --- Check for ambiguous definitions ---
-                        unit_keys = {u.value for u in valid_rates.keys() if isinstance(u, Unit)}
-                        material_units = {
-                            self.materials[m].unit.value
-                            for m in valid_rates.keys() if isinstance(m, str) and m in self.materials
-                        }
-                        intersection = unit_keys.intersection(material_units)
-                        if intersection:
-                            log.warn(
-                                f"Machine '{name}' defines loading rates both per-unit and per-material "
-                                f"for unit(s): {', '.join(intersection)} (possible overlap)"
-                            )
+                loading_rates = MachineLoadingRates(by_unit=by_unit_rates, by_material=by_material_rates)
                             
                 # --- All good, create machine ---
                 machine = Machine(
@@ -281,7 +322,7 @@ class FactoryDataLoader:
                     hours_per_shift=hours_per_shift,
                     power_profile=valid_profiles,
                     storage=storage,
-                    material_loading_rate=valid_rates,
+                    loading_rates=loading_rates,
                 )
 
                 self.machines[machine.name] = machine

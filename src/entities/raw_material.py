@@ -12,9 +12,6 @@ class RawMaterial:
         unit_cost: float,
         stock_quantity: float,
         prep_time: float,
-        supplier: str = None,
-        shelf_life_days: int = None,
-        category: str = None,
     ):
         # --- primary attributes ---
         self.name = name  # e.g. "Flour 00"
@@ -22,11 +19,6 @@ class RawMaterial:
         self.unit_cost = unit_cost  # €/unit
         self.stock_quantity = stock_quantity  # how much is available in stock
         self.prep_time = prep_time  # seconds needed for preparation / preprocessing
-
-        # --- optional metadata ---
-        self.supplier = supplier
-        self.shelf_life_days = shelf_life_days
-        self.category = category
 
     def __repr__(self) -> str:                        
         return f"Material '{self.name}' (stock={str_quant(self.stock_quantity, self.unit)} | cost={str_quant_over_quant(self.unit_cost, Unit.EURO, self.unit)} | prep_time={str_quant(self.prep_time, Unit.SECONDS)})"
