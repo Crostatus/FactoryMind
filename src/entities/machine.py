@@ -57,21 +57,13 @@ class Machine:
     def __init__(
         self,
         name: str,
-        hourly_cost: float,
         nominal_power_kw: float,
-        base_efficiency: float,
-        shifts_per_day: int,
-        hours_per_shift: int,
         power_profile: dict[MachinePowerProfile, float] | None = None,
         storage: Optional[MachineStorage] = None,        
         loading_rates: Optional[MachineLoadingRates] = None,
     ):
         self.name = name
-        self.hourly_cost = hourly_cost
         self.nominal_power_kw = nominal_power_kw
-        self.base_efficiency = base_efficiency
-        self.shifts_per_day = shifts_per_day
-        self.hours_per_shift = hours_per_shift
         self.power_profile = PowerProfile(power_profile)        
         self.storage = storage or MachineStorage()        
         self.loading_rates = loading_rates or MachineLoadingRates()
@@ -87,60 +79,33 @@ class Machine:
         """Ritorna la lista di ricette supportate."""
         return [s.recipe for s in self.settings]
 
-    # --- hybrid loading logic ------------------------------------------------
-    def loading_time(self, quantity: float, material: "RawMaterial") -> float:
-        """
-        Calcola il tempo di caricamento in secondi per una certa quantità di materiale.
-        Priorità:
-            1️ specifica per materiale
-            2️ fallback per unità (es. 'kg', 'L', 'piece')
-            3️ default = 0
-        """
-        rate = 0.0
+    def get_setting_for_recipe(self, recipe: "Recipe") -> "MachineRecipeSetting" | None:
+        """Returns the setting for a given recipe, or None if not supported."""
+        for setting in self.settings:
+            if setting.recipe == recipe:
+                return setting
+        return None    
+    
+    def get_loading_rate(self, material: "RawMaterial") -> float:
+        """Returns the loading rate for a specific material (unit/s)."""
+        # 1. Check specific material rate
         if material.name in self.loading_rates.by_material:
-            rate = self.loading_rates.by_material[material.name].rate
-        elif material.unit in self.loading_rates.by_unit:
-            rate = self.loading_rates.by_unit[material.unit].rate
-        return quantity * rate
-
-    # --- hybrid storage logic ------------------------------------------------
-    def storage_capacity_for(self, material: "RawMaterial") -> float | None:
-        """
-        Restituisce la quantità massima stoccabile per il materiale.
-        Priorità:
-            1️⃣ specifica per materiale
-            2️⃣ fallback per unità
-            3️⃣ None se non definita
-        """
-        if material.name in self.storage.by_material:
-            return self.storage.by_material[material.name]
-        elif material.unit.value in self.storage.by_unit:
-            return self.storage.by_unit[material.unit.value]
-        return None
-
-    # --- derived metrics -----------------------------------------------------
-    def total_available_time(self) -> float:
-        """Tempo totale giornaliero disponibile (in secondi)."""
-        return self.shifts_per_day * self.hours_per_shift * SECONDS_PER_HOUR
-
-    def energy_use(self, state_durations: dict[str, float]) -> float:
-        """
-        Calcola l'energia totale (in kWh) in base ai tempi di stato:
-        state_durations = {'idle': s, 'load': s, 'produce': s}
-        """
-        energy = 0.0
-        for state, seconds in state_durations.items():
-            factor = self.power_profile.items.get(state, 0)
-            energy += self.nominal_power_kw * factor * (seconds / SECONDS_PER_HOUR)
-        return energy
+            rate_obj = self.loading_rates.by_material[material.name]
+            return rate_obj.rate
+            
+        # 2. Check generic unit rate
+        if material.unit in self.loading_rates.by_unit:
+            rate_obj = self.loading_rates.by_unit[material.unit]
+            return rate_obj.rate
+            
+        # Default fallback (should ideally not happen if data is correct)
+        # Returning 1.0 to avoid division by zero, but logging would be better
+        return 1.0
 
     def __repr__(self) -> str:
         lines = [
             f"Machine: '{self.name}'",
             f"  - Nominal power: {str_quant(self.nominal_power_kw, Unit.KILOWATT)}",
-            f"  - Efficiency:    {str_quant(self.base_efficiency * 100, Unit.PERCENT)}",
-            f"  - Hourly cost:   {str_quant_over_quant(self.hourly_cost, Unit.EURO, Unit.HOUR)}",            
-            f"  - Shifts/day:    {self.shifts_per_day} x {str_quant(self.hours_per_shift, Unit.HOUR)}",            
             f"  - Power profile:",
         ]
         for k, v in self.power_profile.items.items():            

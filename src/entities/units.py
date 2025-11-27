@@ -16,8 +16,8 @@ class Unit(Enum):
         """Human-readable representation (so print(Unit.KILOGRAM) -> 'kg')."""
         return self.value
 
-formated_two_decimals = [Unit.GRAM, Unit.KILOGRAM, Unit.LITER, Unit.KILOWATT, Unit.EURO, Unit.PERCENT]
-formatted_no_decimals = [Unit.PIECE, Unit.SECONDS, Unit.MILLILITER]
+formated_two_decimals = [Unit.GRAM, Unit.KILOGRAM, Unit.LITER, Unit.KILOWATT, Unit.EURO, Unit.PERCENT, Unit.SECONDS, Unit.HOUR]
+formatted_no_decimals = [Unit.PIECE, Unit.MILLILITER]
     
 def str_quant(quantity: float, unit: Unit) -> str:
     """Formats a quantity with its unit for display purposes."""

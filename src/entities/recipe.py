@@ -30,4 +30,4 @@ class Recipe:
         str_recipe.append(f"   Ingredients for {str_quant(self.output_quantity, self.output_unit)}:")        
         for mat, qty in self.ingredients.items():
             str_recipe.append(f"     - {mat.name}: {str_quant(qty, mat.unit)}")            
-        return "\n".join(str_recipe)
+        return "\n".join(str_recipe)       

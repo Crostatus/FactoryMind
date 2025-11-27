@@ -1,69 +1,64 @@
 [
-    {
-      "machine": "Mixer 3000",
-      "recipe": "Butter Biscuits",
-      "unit_time": 3.0,
-      "setup_time": 120.0,
-      "yield_rate": 0.98,
-      "batch_capacity": 50.0,
-      "batch_unit": "kg",
-      "energy_factor": 1.15,
-      "batch_label": "mix"
-    },
-    {
-      "machine": "Mixer 3000",
-      "recipe": "Shortbread Cookies",
-      "unit_time": 2.8,
-      "setup_time": 100.0,
-      "yield_rate": 0.97,
-      "batch_capacity": 45.0,
-      "batch_unit": "kg",
-      "energy_factor": 1.1,
-      "batch_label": "mix"
-    },
-    {
-      "machine": "Oven Line 1",
-      "recipe": "Butter Biscuits",
-      "unit_time": 1.2,
-      "setup_time": 60.0,
-      "yield_rate": 0.99,
-      "batch_capacity": 80.0,
-      "batch_unit": "piece",
-      "energy_factor": 1.0,
-      "batch_label": "tray"
-    },
-    {
-      "machine": "Oven Line 1",
-      "recipe": "Shortbread Cookies",
-      "unit_time": 1.4,
-      "setup_time": 80.0,
-      "yield_rate": 0.98,
-      "batch_capacity": 60.0,
-      "batch_unit": "piece",
-      "energy_factor": 1.05,
-      "batch_label": "tray"
-    },
-    {
-      "machine": "Packaging Unit A",
-      "recipe": "Butter Biscuits",
-      "unit_time": 0.5,
-      "setup_time": 30.0,
-      "yield_rate": 1.0,
-      "batch_capacity": 100.0,
-      "batch_unit": "piece",
-      "energy_factor": 0.9,
-      "batch_label": "pack"
-    },
-    {
-      "machine": "Packaging Unit A",
-      "recipe": "Shortbread Cookies",
-      "unit_time": 0.6,
-      "setup_time": 40.0,
-      "yield_rate": 1.0,
-      "batch_capacity": 100.0,
-      "batch_unit": "piece",
-      "energy_factor": 0.9,
-      "batch_label": "pack"
-    }
-  ]
-  
+  {
+    "machine": "Mixer 3000",
+    "recipe": "Butter Biscuits",
+    "time": 3,
+    "setup_time": 120,
+    "unload_time": 60,
+    "yield_rate": 0.98,
+    "capacity": 50,
+    "energy_factor": 1.15
+  },
+  {
+    "machine": "Mixer 3000",
+    "recipe": "Shortbread Cookies",
+    "time": 2,
+    "setup_time": 100,
+    "unload_time": 60,
+    "yield_rate": 0.97,
+    "capacity": 45,
+    "energy_factor": 1.1
+  },
+  {
+    "machine": "Oven Line 1",
+    "recipe": "Butter Biscuits",
+    "time": 11,
+    "setup_time": 60,
+    "unload_time": 60,
+    "yield_rate": 0.99,
+    "capacity": 80,
+    "energy_factor": 1.0
+  },
+  {
+    "machine": "Oven Line 1",
+    "recipe": "Shortbread Cookies",
+    "time": 1,
+    "setup_time": 80,
+    "unload_time": 60,
+    "yield_rate": 0.98,
+    "capacity": 60,
+    "energy_factor": 1.05,
+    "batch_label": "tray"
+  },
+  {
+    "machine": "Packaging Unit A",
+    "recipe": "Butter Biscuits",
+    "time": 1,
+    "setup_time": 30,
+    "unload_time": 60,
+    "yield_rate": 1.0,
+    "capacity": 100,
+    "energy_factor": 0.9,
+    "batch_label": "pack"
+  },
+  {
+    "machine": "Packaging Unit A",
+    "recipe": "Shortbread Cookies",
+    "time": 1,
+    "setup_time": 40,
+    "unload_time": 60,
+    "yield_rate": 1.0,
+    "capacity": 100,
+    "energy_factor": 0.9
+  }
+]

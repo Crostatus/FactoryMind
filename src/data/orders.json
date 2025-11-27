@@ -1,0 +1,32 @@
+[
+    {
+        "name": "Daily Production Order",
+        "items": [
+            {
+                "recipe": "Butter Biscuits",
+                "quantity": 500
+            },
+            {
+                "recipe": "Shortbread Cookies",
+                "quantity": 360
+            },
+            {
+                "recipe": "Chocolate Cream",
+                "quantity": 10.0
+            }
+        ]
+    },
+    {
+        "name": "Weekend Special",
+        "items": [
+            {
+                "recipe": "Croissant Dough",
+                "quantity": 30.0
+            },
+            {
+                "recipe": "Butter Biscuits",
+                "quantity": 1000
+            }
+        ]
+    }
+]

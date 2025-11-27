@@ -6,9 +6,10 @@ from src.entities.raw_material import RawMaterial
 from src.entities.recipe import Recipe
 from src.entities.machine import Machine, MachineStorage, PowerProfile, MachineLoadingRates, LoadingRate
 from src.entities.machine_recipe_setting import MachineRecipeSetting
+from src.entities.order import Order, OrderItem
 from src.utils.logging import log
 from datetime import datetime
-from src.schemas import MaterialSchema
+from src.schemas import MaterialSchema, RecipeSchema, MachineSchema, MachineRecipeSettingSchema, OrderSchema
 
 class FactoryDataLoader:
     """
@@ -20,7 +21,8 @@ class FactoryDataLoader:
 
         self.materials: dict[str, RawMaterial] = {}
         self.recipes: dict[str, Recipe] = {}
-        self.machines: dict[str, Machine] = {}        
+        self.machines: dict[str, Machine] = {}
+        self.orders: dict[str, Order] = {}        
 
     # ------------------------
     # PUBLIC LOADERS
@@ -29,73 +31,25 @@ class FactoryDataLoader:
         """Load all data in correct dependency order."""              
         log.info("Going to load factory data...")
                 
-        self._load_materials_pydantic()
+        self._load_materials()
         self._load_recipes()
         self._load_machines()
         self._load_machine_recipe_settings()
+        self._load_orders()
 
         log.success(f"Loaded {len(self.materials)} materials, "
-              f"{len(self.recipes)} recipes, {len(self.machines)} machines.")
+              f"{len(self.recipes)} recipes, {len(self.machines)} machines, "
+              f"{len(self.orders)} orders.")
 
     # ------------------------
     # INTERNAL LOADERS
     # ------------------------
     def _load_materials(self):
+        """
+        Loading materials
+        """
         path = self.data_dir / "materials.json"
         log.debug(f"Loading materials from '{path.name}' ...")
-        
-        with open(path, "r") as f:
-            data = json.load(f)
-
-        loaded = 0
-        skipped = 0
-
-        for i, m in enumerate(data, start=1):
-            try:
-                name = str(m.get("name", "")).strip()
-                unit_str = str(m.get("unit", "")).strip()
-
-                # --- Basic checks ---
-                if not name:
-                    raise ValueError("Missing name")
-                if name in self.materials:
-                    raise ValueError(f"Duplicate material '{name}'")
-                if unit_str not in [u.value for u in Unit]:
-                    raise ValueError(f"Material '{name}' has invalid unit '{unit_str}'")
-                if m.get("unit_cost", -1) < 0:
-                    raise ValueError(f"Material '{name}' has negative unit_cost.")
-                if m.get("stock_quantity", -1) < 0:
-                    raise ValueError(f"Material '{name}' has negative stock_quantity.")
-                if m.get("prep_time", -1) < 0:
-                    raise ValueError(f"Material '{name}' has negative prep_time.")
-
-                
-                material = RawMaterial(
-                    name=name,
-                    unit=Unit(unit_str),
-                    unit_cost=float(m["unit_cost"]),
-                    stock_quantity=float(m["stock_quantity"]),
-                    prep_time=float(m["prep_time"]),
-                )
-                self.materials[material.name] = material
-                loaded += 1
-                log.trace(f"Loaded {material}")
-
-            except Exception as e:
-                skipped += 1
-                log.warn(f"Skipped material #{i}: {e}")
-        
-        if(loaded == 0):
-            log.error("No materials loaded. Please check the data files")
-        else:
-            log.info(f"Loaded {loaded} materials ({skipped} skipped)")
-
-    def _load_materials_pydantic(self):
-        """
-        Example of robust loading using Pydantic.
-        """
-        path = self.data_dir / "materials.json"
-        log.debug(f"Loading materials (Pydantic) from '{path.name}' ...")
         
         with open(path, "r") as f:
             data = json.load(f)
@@ -132,10 +86,12 @@ class FactoryDataLoader:
                 # Pydantic errors are very descriptive!
                 log.warn(f"Skipped material #{i}: {e}")
         
-        log.success(f"[Pydantic] Loaded {loaded} materials ({skipped} skipped)")
-
+        log.success(f"Loaded {loaded} materials ({skipped} skipped)")
 
     def _load_recipes(self):
+        """
+        Loading using for Recipes.
+        """
         path = self.data_dir / "recipes.json"
         log.debug(f"Loading recipes from '{path.name}' ...")
 
@@ -145,53 +101,43 @@ class FactoryDataLoader:
         loaded = 0
         skipped = 0
 
-        for i, r in enumerate(data, start=1):
+        for i, item in enumerate(data, start=1):
             try:
-                name = str(r.get("name", "")).strip()
-                output_quantity = float(r.get("output_quantity", -1))
-                output_unit_str = str(r.get("output_unit", "")).strip()
-                ingredients_dict = r.get("ingredients", {})
+                # 1. Validate with Pydantic
+                schema = RecipeSchema(**item)
 
-                # --- Basic checks ---
-                if not name:
-                    raise ValueError("Missing recipe name")
-                if name in self.recipes:
-                    raise ValueError(f"Duplicate recipe '{name}'")
-                if output_quantity <= 0:
-                    raise ValueError(f"Recipe '{name}' has invalid output_quantity '{output_quantity}'")
-                if output_unit_str not in [u.value for u in Unit]:
-                    raise ValueError(f"Recipe '{name}' has invalid output unit '{output_unit_str}'")
-                if not ingredients_dict or not isinstance(ingredients_dict, dict):
-                    raise ValueError(f"Recipe '{name}' has no valid ingredients")
+                # 2. Business Logic Checks
+                if schema.name in self.recipes:
+                    raise ValueError(f"Duplicate recipe '{schema.name}'")
+                
+                # Check output quantity coherence
+                if schema.output_unit == Unit.PIECE.value and not float(schema.output_quantity).is_integer():
+                     raise ValueError(f"Recipe '{schema.name}' output quantity must be integer when unit is 'piece'")
 
-                output_unit = Unit(output_unit_str)
-
-                # --- Check output quantity coherence ---
-                if output_unit == Unit.PIECE and not float(output_quantity).is_integer():
-                    raise ValueError(f"Recipe '{name}' output quantity must be integer when unit is 'piece' (got {output_quantity})")
-
-                # --- Validate ingredients ---
+                # 3. Resolve Ingredients (Foreign Keys)
                 ingredients = {}
-                for mat_name, qty in ingredients_dict.items():
-                    mat_name_clean = str(mat_name).strip()
-                    if mat_name_clean not in self.materials:
-                        raise ValueError(f"Ingredient '{mat_name_clean}' not found in loaded materials")
-                    if not isinstance(qty, (int, float)) or qty <= 0:
-                        raise ValueError(f"Ingredient '{mat_name_clean}' has invalid quantity '{qty}'")
-
-                    material = self.materials[mat_name_clean]
+                for mat_name, qty in schema.ingredients.items():
+                    if mat_name not in self.materials:
+                        raise ValueError(f"Ingredient '{mat_name}' not found in loaded materials")
                     
+                    material = self.materials[mat_name]
+                    
+                    # Unit consistency check
                     if material.unit == Unit.PIECE and not float(qty).is_integer():
-                        raise ValueError(f"Ingredient '{mat_name_clean}' uses unit 'piece' but quantity '{qty}' is not an integer")
+                        raise ValueError(f"Ingredient '{mat_name}' uses unit 'piece' but quantity '{qty}' is not an integer")
 
                     ingredients[material] = float(qty)
-                
+
+                # 4. Create Entity
                 recipe = Recipe(
-                    name=name,
+                    name=schema.name,
                     ingredients=ingredients,
-                    output_quantity=output_quantity,
-                    output_unit=output_unit,
+                    output_quantity=schema.output_quantity,
+                    output_unit=Unit(schema.output_unit),
+                    description=schema.description,
+                    category=schema.category
                 )
+                
                 self.recipes[recipe.name] = recipe
                 loaded += 1
                 log.trace(f"Loaded {recipe}")
@@ -200,13 +146,13 @@ class FactoryDataLoader:
                 skipped += 1
                 log.warn(f"Skipped recipe #{i}: {e}")
 
-        if(loaded == 0):
-            log.error("No recipes loaded. Please check the data files")
-        else:
-            log.info(f"Loaded {loaded} recipes ({skipped} skipped)")
-            
+        log.success(f"Loaded {loaded} recipes ({skipped} skipped)")
+          
 
     def _load_machines(self):
+        """
+        Loading machines
+        """
         path = self.data_dir / "machines.json"
         log.debug(f"Loading machines from '{path.name}' ...")
 
@@ -216,111 +162,64 @@ class FactoryDataLoader:
         loaded = 0
         skipped = 0
 
-        for i, m in enumerate(data, start=1):
+        for i, item in enumerate(data, start=1):
             try:
-                name = str(m.get("name", "")).strip()
-                hourly_cost = float(m.get("hourly_cost", -1))
-                nominal_power_kw = float(m.get("nominal_power_kw", -1))
-                base_efficiency = float(m.get("base_efficiency", -1))
-                shifts_per_day = int(m.get("shifts_per_day", 0))
-                hours_per_shift = float(m.get("hours_per_shift", 0))
-                power_profile = m.get("power_profile", {})
-                storage_dict = m.get("internal_storage_capacity", {})
-                loading_rate_dict = m.get("material_loading_rate", {})
+                # 1. Validate with Pydantic
+                schema = MachineSchema(**item)
 
-                # --- Basic checks ---
-                if not name:
-                    raise ValueError("Missing machine name")
-                if name in self.machines:
-                    raise ValueError(f"Duplicate machine '{name}'")
-                if hourly_cost < 0:
-                    raise ValueError(f"Machine '{name}' has negative hourly_cost")
-                if nominal_power_kw <= 0:
-                    raise ValueError(f"Machine '{name}' has invalid nominal_power_kw ({nominal_power_kw})")
-                if not (0 < base_efficiency <= 1):
-                    raise ValueError(f"Machine '{name}' has invalid base_efficiency ({base_efficiency})")
-                if shifts_per_day <= 0 or hours_per_shift <= 0:
-                    raise ValueError(f"Machine '{name}' has invalid working schedule ({shifts_per_day}x{hours_per_shift})")
-                
-                # --- Validate power profile ---
-                valid_profiles = {}
-                if not isinstance(power_profile, dict):
-                    raise ValueError(f"Machine '{name}' power_profile must be a dict")
-                for state, factor in power_profile.items():                    
-                    if not state in [s.value for s in MachinePowerProfile]:
-                        raise ValueError(f"Machine '{name}' has invalid power profile state '{state}' (allowed: {[s.value for s in MachinePowerProfile]})")
-                    if not isinstance(factor, (int, float)) or factor < 0:
-                        raise ValueError(f"Machine '{name}' invalid power factor '{factor}' for state '{state}'")                                        
-                    valid_profiles[MachinePowerProfile(state)] = float(factor)
+                # 2. Business Logic Checks
+                if schema.name in self.machines:
+                    raise ValueError(f"Duplicate machine '{schema.name}'")
 
-                # --- Validate and split storage capacity ---
-                if not isinstance(storage_dict, dict):
-                    raise ValueError(f"Machine '{name}' internal_storage_capacity must be a dict")
+                # 3. Process Power Profile
+                power_profile = {}
+                for state, factor in schema.power_profile.items():
+                    power_profile[MachinePowerProfile(state)] = factor
 
-                by_unit = {}
-                by_material = {}
-                for key, value in storage_dict.items():
-                    if not isinstance(value, (int, float)) or value < 0:
-                        raise ValueError(f"Machine '{name}' invalid capacity '{value}' for '{key}'")
-
-                    # Distinguish between Unit and material name
+                # 4. Process Storage
+                by_unit_storage = {}
+                by_material_storage = {}
+                for key, value in schema.internal_storage_capacity.items():
+                    # Check if key is a Unit
                     if key in [u.value for u in Unit]:
-                        by_unit[Unit(key)] = float(value)
+                        by_unit_storage[Unit(key)] = value
                     else:
-                        by_material[str(key).strip()] = float(value)
+                        # Assume material name
+                        by_material_storage[key] = value
+                
+                storage = MachineStorage(by_unit=by_unit_storage, by_material=by_material_storage)
 
-                storage = MachineStorage(by_unit=by_unit, by_material=by_material)
-
-                # --- Validate and split loading rate ---
-                if not isinstance(loading_rate_dict, dict):
-                    raise ValueError(f"Machine '{name}' material_loading_rate must be a dict")
-
+                # 5. Process Loading Rates
                 by_unit_rates = {}
                 by_material_rates = {}
                 
-                for key, value in loading_rate_dict.items():
-                    key_str = str(key).strip()
-                    if not isinstance(value, (int, float)) or value <= 0:
-                        raise ValueError(f"Machine '{name}' invalid loading rate '{value}' for '{key_str}'")
-
-                    # Distinguish between unit and material name
-                    if key_str in [u.value for u in Unit]:
-                        unit = Unit(key_str)
+                for key, value in schema.material_loading_rate.items():
+                    if key in [u.value for u in Unit]:
+                        unit = Unit(key)
                         if unit == Unit.PIECE and not float(value).is_integer():
-                            raise ValueError(
-                                f"Machine '{name}' loading rate for unit 'piece' must be integer (got {value})"
-                            )
-                        # Create LoadingRate object
-                        by_unit_rates[unit] = LoadingRate(rate=float(value), quant=Unit.SECONDS, over_quant=unit)
+                             raise ValueError(f"Machine '{schema.name}' loading rate for unit 'piece' must be integer")
+                        by_unit_rates[unit] = LoadingRate(rate=value, quant=Unit.SECONDS, over_quant=unit)
                     else:
-                        # interpret as material name
-                        if key_str not in self.materials:
-                            log.warn(f"Machine '{name}' defines loading rate for unknown material '{key_str}'")
-                        else:
-                            mat = self.materials[key_str]
-                            # consistency check: same unit
-                            if mat.unit == Unit.PIECE and not float(value).is_integer():
-                                raise ValueError(
-                                    f"Machine '{name}' loading rate for material '{key_str}' uses unit 'piece' "
-                                    f"but non-integer value {value}"
-                                )                        
-                        over_quant = Unit.PIECE
-                        if key_str in self.materials:
-                            over_quant = self.materials[key_str].unit
+                        # Material name
+                        if key not in self.materials:
+                             log.warn(f"Machine '{schema.name}' defines loading rate for unknown material '{key}'")
                         
-                        by_material_rates[key_str] = LoadingRate(rate=float(value), quant=Unit.SECONDS, over_quant=over_quant)
+                        # Try to determine unit from material if known
+                        over_quant = Unit.PIECE
+                        if key in self.materials:
+                            over_quant = self.materials[key].unit
+                            if over_quant == Unit.PIECE and not float(value).is_integer():
+                                raise ValueError(f"Machine '{schema.name}' loading rate for material '{key}' uses unit 'piece' but value is not integer")
+
+                        by_material_rates[key] = LoadingRate(rate=value, quant=Unit.SECONDS, over_quant=over_quant)
 
                 loading_rates = MachineLoadingRates(by_unit=by_unit_rates, by_material=by_material_rates)
-                            
-                # --- All good, create machine ---
+
+                # 5. Create Entity
                 machine = Machine(
-                    name=name,
-                    hourly_cost=hourly_cost,
-                    nominal_power_kw=nominal_power_kw,
-                    base_efficiency=base_efficiency,
-                    shifts_per_day=shifts_per_day,
-                    hours_per_shift=hours_per_shift,
-                    power_profile=valid_profiles,
+                    name=schema.name,
+                    nominal_power_kw=schema.nominal_power_kw,
+                    power_profile=power_profile,
                     storage=storage,
                     loading_rates=loading_rates,
                 )
@@ -330,42 +229,125 @@ class FactoryDataLoader:
                 log.trace(f"Loaded {machine}")
 
             except Exception as e:
-                skipped+= 1
+                skipped += 1
                 log.warn(f"Skipped machine #{i}: {e}")
-        
-        if(loaded == 0):
-            log.error("No machines loaded. Please check the data files")
-        else:
-            log.info(f"Loaded {loaded} machines ({skipped} skipped)")
+
+        log.success(f"Loaded {loaded} machines ({skipped} skipped)")
             
-
-        
-        
-
+            
     def _load_machine_recipe_settings(self):
+        """
+        Loading machine recipe settings using Pydantic.
+        """
         path = self.data_dir / "machines_recipe_settings.json"
+        log.debug(f"Loading settings from '{path.name}' ...")
+
         with open(path, "r") as f:
             data = json.load(f)
 
-        for s in data:
-            if s["machine"] not in self.machines:
-                raise ValueError(f"Machine '{s['machine']}' not found.")
-            if s["recipe"] not in self.recipes:
-                raise ValueError(f"Recipe '{s['recipe']}' not found.")
+        loaded = 0
+        skipped = 0
 
-            machine = self.machines[s["machine"]]
-            recipe = self.recipes[s["recipe"]]
+        for i, item in enumerate(data, start=1):
+            try:
+                # 1. Validate with Pydantic
+                schema = MachineRecipeSettingSchema(**item)
 
-            setting = MachineRecipeSetting(
-                recipe=recipe,
-                unit_time=s["unit_time"],
-                setup_time=s["setup_time"],
-                yield_rate=s["yield_rate"],
-                batch_capacity=s["batch_capacity"],
-                batch_unit=Unit(s["batch_unit"]),
-                batch_label=s.get("batch_label", "batch"),
-                energy_factor=s.get("energy_factor", 1.0)
-            )
+                # 2. Resolve Foreign Keys
+                if schema.machine not in self.machines:
+                    raise ValueError(f"Machine '{schema.machine}' not found.")
+                if schema.recipe not in self.recipes:
+                    raise ValueError(f"Recipe '{schema.recipe}' not found.")
 
-            machine.add_setting(setting)
+                machine = self.machines[schema.machine]
+                recipe = self.recipes[schema.recipe]
+
+                # 3. Data Integrity Constraints
+                # If recipe output unit is PIECE, capacity must be an integer
+                if recipe.output_unit == Unit.PIECE and not float(schema.capacity).is_integer():
+                    raise ValueError(
+                        f"Machine '{schema.machine}' recipe '{schema.recipe}': "
+                        f"capacity must be an integer when recipe output_unit is 'piece'"
+                    )
+
+                # 4. Create Entity
+                setting = MachineRecipeSetting(
+                    recipe=recipe,
+                    time=schema.time,
+                    setup_time=schema.setup_time,
+                    unload_time=schema.unload_time,
+                    yield_rate=schema.yield_rate,
+                    capacity=schema.capacity,                    
+                    energy_factor=schema.energy_factor
+                )
+
+                machine.add_setting(setting)
+                loaded += 1
+                log.trace(f"Loaded {setting}\n        on machine: {machine.name}")
+
+            except Exception as e:
+                skipped += 1
+                log.warn(f"Skipped setting #{i}: {e}")
+
+        log.success(f"Loaded {loaded} settings ({skipped} skipped)")
+
+    def _load_orders(self):
+        """
+        Loading orders using Pydantic.
+        """
+        path = self.data_dir / "orders.json"
+        log.debug(f"Loading orders from '{path.name}' ...")
+
+        with open(path, "r") as f:
+            data = json.load(f)
+
+        loaded = 0
+        skipped = 0
+
+        for i, item in enumerate(data, start=1):
+            try:
+                # 1. Validate with Pydantic
+                schema = OrderSchema(**item)
+
+                # 2. Business Logic Checks
+                if schema.name in self.orders:
+                    raise ValueError(f"Duplicate order '{schema.name}'")
+
+                # 3. Resolve Foreign Keys and Create Items
+                order_items = []
+                for item_schema in schema.items:
+                    if item_schema.recipe not in self.recipes:
+                        raise ValueError(f"Recipe '{item_schema.recipe}' not found.")
+                    
+                    recipe = self.recipes[item_schema.recipe]
+                    
+                    # 4. Data Integrity Constraints
+                    # If recipe output unit is PIECE, quantity must be an integer
+                    if recipe.output_unit == Unit.PIECE and not float(item_schema.quantity).is_integer():
+                        raise ValueError(
+                            f"Order '{schema.name}' recipe '{item_schema.recipe}': "
+                            f"quantity must be an integer when recipe output_unit is 'piece'"
+                        )
+                    
+                    order_item = OrderItem(
+                        recipe=recipe,
+                        quantity=item_schema.quantity
+                    )
+                    order_items.append(order_item)
+
+                # 5. Create Entity
+                order = Order(
+                    name=schema.name,
+                    items=order_items
+                )
+
+                self.orders[order.name] = order
+                loaded += 1
+                log.trace(f"Loaded {order}")
+
+            except Exception as e:
+                skipped += 1
+                log.warn(f"Skipped order #{i}: {e}")
+
+        log.success(f"Loaded {loaded} orders ({skipped} skipped)")
 
