@@ -29,7 +29,7 @@ def main():
         log.error("No candidates generated!")
         sys.exit(1)
         
-    log.success("Planner execution complete.")
+    log.success("Planner verification complete.")
 
 if __name__ == "__main__":
     main()

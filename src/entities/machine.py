@@ -4,8 +4,9 @@ from typing import Optional
 from src.entities.machine_recipe_setting import MachineRecipeSetting
 from src.entities.power_profile import MachinePowerProfile
 from src.entities.raw_material import RawMaterial
+from src.entities.recipe import Recipe
 from src.entities.units import Unit, str_quant, str_quant_over_quant
-
+from src.utils.logging import log
 
 SECONDS_PER_HOUR = 3600
 
@@ -65,10 +66,9 @@ class Machine:
         self.nominal_power_kw = nominal_power_kw
         self.power_profile = PowerProfile(power_profile)        
         self.loading_rates = loading_rates or MachineLoadingRates()
-        self.settings: list["MachineRecipeSetting"] = []  # collegamenti ricette -> macchina
-
-    # --- associations --------------------------------------------------------
-    def add_setting(self, setting: "MachineRecipeSetting"):
+        self.settings: list[MachineRecipeSetting] = []  # collegamenti ricette -> macchina
+    
+    def add_setting(self, setting: MachineRecipeSetting):
         """Collega una configurazione ricetta–macchina."""
         setting.machine = self
         self.settings.append(setting)
@@ -77,14 +77,15 @@ class Machine:
         """Ritorna la lista di ricette supportate."""
         return [s.recipe for s in self.settings]
 
-    def get_setting_for_recipe(self, recipe: "Recipe") -> "MachineRecipeSetting" | None:
+    def get_setting_for_recipe_from_name(self, recipeName: str) -> MachineRecipeSetting | None:
         """Returns the setting for a given recipe, or None if not supported."""
+        log.debug(f"Looking for recipe '{recipeName}' in machine '{self.name}'")    
         for setting in self.settings:
-            if setting.recipe == recipe:
+            if setting.recipe.name == recipeName:
                 return setting
-        return None    
+        return None
     
-    def get_loading_rate(self, material: "RawMaterial") -> float:
+    def get_loading_rate(self, material: RawMaterial) -> float:
         """Returns the loading rate for a specific material (unit/s)."""
         # 1. Check specific material rate
         if material.name in self.loading_rates.by_material:
