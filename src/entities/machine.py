@@ -58,14 +58,12 @@ class Machine:
         self,
         name: str,
         nominal_power_kw: float,
-        power_profile: dict[MachinePowerProfile, float] | None = None,
-        storage: Optional[MachineStorage] = None,        
+        power_profile: dict[MachinePowerProfile, float] | None = None,        
         loading_rates: Optional[MachineLoadingRates] = None,
     ):
         self.name = name
         self.nominal_power_kw = nominal_power_kw
         self.power_profile = PowerProfile(power_profile)        
-        self.storage = storage or MachineStorage()        
         self.loading_rates = loading_rates or MachineLoadingRates()
         self.settings: list["MachineRecipeSetting"] = []  # collegamenti ricette -> macchina
 
@@ -115,14 +113,6 @@ class Machine:
         for key, value in self.loading_rates.by_unit.items():
              lines.append(f"      {key}: {value}")
         for key, value in self.loading_rates.by_material.items():
-             lines.append(f"      {key}: {value}")
-
-        lines.append("  - Storage capacity:")
-        for key, value in self.storage.by_unit.items():
-            lines.append(f"      {str_quant(value, key)}")
-
-        for key, value in self.storage.by_material.items():
-            lines.append(f"      {key}: {value}")
-        
+             lines.append(f"      {key}: {value}")                
 
         return "\n".join(lines)

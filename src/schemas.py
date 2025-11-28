@@ -53,7 +53,6 @@ class MachineSchema(BaseModel):
     nominal_power_kw: float = Field(..., gt=0)
 
     power_profile: dict[str, float] = Field(default_factory=dict)
-    internal_storage_capacity: dict[str, float] = Field(default_factory=dict)
     material_loading_rate: dict[str, float] = Field(default_factory=dict)
 
     @field_validator("power_profile")
@@ -67,7 +66,7 @@ class MachineSchema(BaseModel):
                 raise ValueError(f"Power factor for '{state}' must be non-negative")
         return v
 
-    @field_validator("internal_storage_capacity", "material_loading_rate")
+    @field_validator("material_loading_rate")
     @classmethod
     def validate_positive_values(cls, v: dict[str, float]) -> dict[str, float]:
         for key, val in v.items():

@@ -7,11 +7,6 @@
       "loading": 0.5,
       "produce": 0.9
     },
-    "internal_storage_capacity": {
-      "Flour 00": 80.0,
-      "Butter": 50.0,
-      "kg": 100.0
-    },
     "material_loading_rate": {
       "Flour 00": 2.5,
       "Butter": 1.8,
@@ -28,9 +23,6 @@
       "loading": 0.6,
       "produce": 1.0
     },
-    "internal_storage_capacity": {
-      "piece": 80
-    },
     "material_loading_rate": {
       "piece": 1.0
     }
@@ -42,9 +34,6 @@
       "idle": 0.15,
       "loading": 0.6,
       "produce": 1.0
-    },
-    "internal_storage_capacity": {
-      "piece": 80
     },
     "material_loading_rate": {
       "piece": 1

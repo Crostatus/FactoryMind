@@ -176,19 +176,6 @@ class FactoryDataLoader:
                 for state, factor in schema.power_profile.items():
                     power_profile[MachinePowerProfile(state)] = factor
 
-                # 4. Process Storage
-                by_unit_storage = {}
-                by_material_storage = {}
-                for key, value in schema.internal_storage_capacity.items():
-                    # Check if key is a Unit
-                    if key in [u.value for u in Unit]:
-                        by_unit_storage[Unit(key)] = value
-                    else:
-                        # Assume material name
-                        by_material_storage[key] = value
-                
-                storage = MachineStorage(by_unit=by_unit_storage, by_material=by_material_storage)
-
                 # 5. Process Loading Rates
                 by_unit_rates = {}
                 by_material_rates = {}
@@ -219,8 +206,7 @@ class FactoryDataLoader:
                 machine = Machine(
                     name=schema.name,
                     nominal_power_kw=schema.nominal_power_kw,
-                    power_profile=power_profile,
-                    storage=storage,
+                    power_profile=power_profile,                    
                     loading_rates=loading_rates,
                 )
 
