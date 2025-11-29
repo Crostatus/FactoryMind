@@ -3,7 +3,6 @@ from src.entities.order import Order
 from src.entities.recipe import Recipe
 from src.entities.machine import Machine
 from src.entities.production_task_candidate import ProductionTaskCandidate
-from src.utils.time_evaluator import evaluate_recipe_time
 from src.utils.logging import log
 
 class ProductionPlanner:
@@ -32,23 +31,25 @@ class ProductionPlanner:
         candidates = []
         
         for recipe, quantity in grouped_orders.items():
+            machines_that_can_produce = 0
             for machine in machines:
                 setting = machine.get_setting_for_recipe_from_name(recipe.name)
                 if setting:
-                    # Machine supports this recipe
-                    time = evaluate_recipe_time(machine, recipe.name, quantity)
+                    # Machine supports this recipe                    
                     candidate = ProductionTaskCandidate(
                         machine=machine,
                         recipe=recipe,
-                        total_quantity=quantity,
-                        estimated_time=time
+                        requested_quantity=quantity,                        
                     )
                     candidates.append(candidate)
-                    log.debug(f"Created: {candidate}")                
+                    machines_that_can_produce += 1
+                    log.trace(f"Created {candidate}")                
+            if machines_that_can_produce == 0:
+                log.error(f"No machines found to produce '{recipe.name}'")
                     
         return candidates
 
-    def plan(self, orders: list[Order], machines: list[Machine]) -> list[ProductionTaskCandidate]:
+    def create_candidates(self, orders: list[Order], machines: list[Machine]) -> list[ProductionTaskCandidate]:
         """
         Main entry point: groups orders and creates candidates.
         """
