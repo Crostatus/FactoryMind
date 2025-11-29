@@ -20,7 +20,7 @@ class ProductionPlanner:
                 grouped[item.recipe] += item.quantity
         return dict(grouped)
 
-    def create_candidates(
+    def _create_candidates(
         self, 
         grouped_orders: dict[Recipe, float], 
         machines: list[Machine]
@@ -58,7 +58,10 @@ class ProductionPlanner:
         grouped = self.group_orders_by_recipe(orders)
         log.info(f"Grouped into {len(grouped)} unique recipes.")
         
-        candidates = self.create_candidates(grouped, machines)
-        log.success(f"Generated {len(candidates)} candidates.")
+        candidates = self._create_candidates(grouped, machines)
+        if candidates.count == 0:
+            log.warn("No candidates generated")
+        else: 
+            log.success(f"Generated {len(candidates)} candidates")
         
         return candidates
