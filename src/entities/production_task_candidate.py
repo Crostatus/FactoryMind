@@ -34,9 +34,9 @@ class ProductionTaskCandidate:
         self.estimated_time = self.idle_time + self.loading_time + self.producing_time
         
         self.energy_consumption_per_profiles = {
-            MachinePowerProfile.IDLE: self.idle_time * machine.nominal_power * machine.power_profile.items[MachinePowerProfile.IDLE],
-            MachinePowerProfile.LOADING: self.loading_time * machine.nominal_power * machine.power_profile.items[MachinePowerProfile.LOADING],
-            MachinePowerProfile.PRODUCE: self.producing_time * machine.nominal_power * machine.power_profile.items[MachinePowerProfile.PRODUCE]
+            MachinePowerProfile.IDLE: self.idle_time * machine.nominal_power_kw * machine.power_profile.items[MachinePowerProfile.IDLE],
+            MachinePowerProfile.LOADING: self.loading_time * machine.nominal_power_kw * machine.power_profile.items[MachinePowerProfile.LOADING],
+            MachinePowerProfile.PRODUCE: self.producing_time * machine.nominal_power_kw * machine.power_profile.items[MachinePowerProfile.PRODUCE]
         }
         self.total_energy_consumption = sum(self.energy_consumption_per_profiles.values())
 
@@ -58,7 +58,7 @@ class ProductionTaskCandidate:
 
         # Calculate total loading time
         loading_time = sum(
-            (quantity * how_many_times_recipe) / self.machine.get_loading_rate(material)
+            ((quantity * how_many_times_recipe) / self.machine.get_loading_rate(material)) + material.prep_time
             for material, quantity in self.recipe.ingredients.items()
         )
 

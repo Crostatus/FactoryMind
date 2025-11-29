@@ -1,6 +1,5 @@
 from __future__ import annotations
-from ast import Dict
-from typing import Optional
+from typing import Dict, Optional
 from src.entities.machine_recipe_setting import MachineRecipeSetting
 from src.entities.power_profile import MachinePowerProfile
 from src.entities.raw_material import RawMaterial

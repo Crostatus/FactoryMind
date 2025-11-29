@@ -21,6 +21,9 @@ def main():
     log.info("Running planner...")
     candidates = planner.create_candidates(orders, machines)
     
+    log.info("Optimizing recipe assignment...")
+    candidates = planner.optimize_assignment(candidates)
+    
     if not candidates:
         log.error("No candidates generated!")
         sys.exit(1)
