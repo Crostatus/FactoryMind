@@ -78,8 +78,7 @@ class Machine:
         return [s.recipe for s in self.settings]
 
     def get_setting_for_recipe_from_name(self, recipeName: str) -> MachineRecipeSetting | None:
-        """Returns the setting for a given recipe, or None if not supported."""
-        log.debug(f"Looking for recipe '{recipeName}' in machine '{self.name}'")    
+        """Returns the setting for a given recipe, or None if not supported."""        
         for setting in self.settings:
             if setting.recipe.name == recipeName:
                 return setting

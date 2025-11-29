@@ -19,12 +19,8 @@ def main():
     machines = list(loader.machines.values())
     
     log.info("Running planner...")
-    candidates = planner.plan(orders, machines)
+    candidates = planner.create_candidates(orders, machines)
     
-    log.info("\n--- Generated Candidates ---")
-    for c in candidates:
-        print(c)
-        
     if not candidates:
         log.error("No candidates generated!")
         sys.exit(1)
