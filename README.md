@@ -119,7 +119,3 @@ MAKESPAN (calendar time): 1068.00 seconds (17.80 minutes)
 - `pydantic`: Data validation and settings management
 - `pulp`: Linear programming and optimization
 - Additional dependencies listed in `src/requirements.txt`
-
-## License
-
-MIT
