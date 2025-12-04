@@ -8,8 +8,8 @@ from src.utils.time_evaluator import evaluate_recipe_time
 
 def test_evaluate_recipe_time_with_loading_time():
     # 1. Setup Materials
-    flour = RawMaterial(name="Flour", unit=Unit.KILOGRAM, unit_cost=1.0, stock_quantity=1000.0, prep_time=0.0)
-    sugar = RawMaterial(name="Sugar", unit=Unit.KILOGRAM, unit_cost=2.0, stock_quantity=1000.0, prep_time=0.0)
+    flour = RawMaterial(name="Flour", unit=Unit.KILOGRAM, unit_cost=1.0, stock_quantity=1000.0)
+    sugar = RawMaterial(name="Sugar", unit=Unit.KILOGRAM, unit_cost=2.0, stock_quantity=1000.0)
 
     # 2. Setup Recipe
     # Produces 100 PIECEs using 50kg Flour and 20kg Sugar

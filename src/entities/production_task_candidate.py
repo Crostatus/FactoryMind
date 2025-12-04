@@ -58,7 +58,7 @@ class ProductionTaskCandidate:
 
         # Calculate total loading time
         loading_time = sum(
-            ((quantity * how_many_times_recipe) / self.machine.get_loading_rate(material)) + material.prep_time
+            ((quantity * how_many_times_recipe) / self.machine.get_loading_rate(material))
             for material, quantity in self.recipe.ingredients.items()
         )
 

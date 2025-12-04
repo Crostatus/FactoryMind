@@ -76,7 +76,7 @@ class ProductionPlanner:
             return []
 
         import pulp
-
+        
         # Group candidates by recipe
         candidates_by_recipe = defaultdict(list)
         for c in candidates:

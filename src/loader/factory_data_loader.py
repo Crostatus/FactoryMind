@@ -16,8 +16,23 @@ class FactoryDataLoader:
     Handles loading and linking all factory data from JSON files.
     """
 
-    def __init__(self, data_dir: str = "src/data"):
+    def __init__(
+        self, 
+        data_dir: str = "src/data",
+        materials_file: str = "materials.json",
+        recipes_file: str = "recipes.json",
+        machines_file: str = "machines.json",
+        machine_recipe_settings_file: str = "machines_recipe_settings.json",
+        orders_file: str = "orders.json"
+    ):
         self.data_dir = Path(data_dir)
+        
+        # Resource file paths
+        self.materials_path = self.data_dir / materials_file
+        self.recipes_path = self.data_dir / recipes_file
+        self.machines_path = self.data_dir / machines_file
+        self.machine_recipe_settings_path = self.data_dir / machine_recipe_settings_file
+        self.orders_path = self.data_dir / orders_file
 
         self.materials: dict[str, RawMaterial] = {}
         self.recipes: dict[str, Recipe] = {}
@@ -48,10 +63,9 @@ class FactoryDataLoader:
         """
         Loading materials
         """
-        path = self.data_dir / "materials.json"
-        log.debug(f"Loading materials from '{path.name}' ...")
+        log.debug(f"Loading materials from '{self.materials_path.name}' ...")
         
-        with open(path, "r") as f:
+        with open(self.materials_path, "r") as f:
             data = json.load(f)
 
         loaded = 0
@@ -73,8 +87,7 @@ class FactoryDataLoader:
                     name=schema.name,
                     unit=Unit(schema.unit),
                     unit_cost=schema.unit_cost,
-                    stock_quantity=schema.stock_quantity,
-                    prep_time=schema.prep_time,
+                    stock_quantity=schema.stock_quantity
                 )
                 
                 self.materials[material.name] = material
@@ -92,10 +105,9 @@ class FactoryDataLoader:
         """
         Loading using for Recipes.
         """
-        path = self.data_dir / "recipes.json"
-        log.debug(f"Loading recipes from '{path.name}' ...")
+        log.debug(f"Loading recipes from '{self.recipes_path.name}' ...")
 
-        with open(path, "r") as f:
+        with open(self.recipes_path, "r") as f:
             data = json.load(f)
 
         loaded = 0
@@ -153,10 +165,9 @@ class FactoryDataLoader:
         """
         Loading machines
         """
-        path = self.data_dir / "machines.json"
-        log.debug(f"Loading machines from '{path.name}' ...")
+        log.debug(f"Loading machines from '{self.machines_path.name}' ...")
 
-        with open(path, "r") as f:
+        with open(self.machines_path, "r") as f:
             data = json.load(f)
 
         loaded = 0
@@ -225,10 +236,9 @@ class FactoryDataLoader:
         """
         Loading machine recipe settings using Pydantic.
         """
-        path = self.data_dir / "machines_recipe_settings.json"
-        log.debug(f"Loading settings from '{path.name}' ...")
+        log.debug(f"Loading settings from '{self.machine_recipe_settings_path.name}' ...")
 
-        with open(path, "r") as f:
+        with open(self.machine_recipe_settings_path, "r") as f:
             data = json.load(f)
 
         loaded = 0
@@ -281,10 +291,9 @@ class FactoryDataLoader:
         """
         Loading orders using Pydantic.
         """
-        path = self.data_dir / "orders.json"
-        log.debug(f"Loading orders from '{path.name}' ...")
+        log.debug(f"Loading orders from '{self.orders_path.name}' ...")
 
-        with open(path, "r") as f:
+        with open(self.orders_path, "r") as f:
             data = json.load(f)
 
         loaded = 0

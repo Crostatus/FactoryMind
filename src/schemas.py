@@ -7,8 +7,7 @@ class MaterialSchema(BaseModel):
     name: str = Field(..., min_length=1, description="Unique name of the material")
     unit: str = Field(..., description="Unit of measurement (e.g., 'kg', 'L', 'piece')")
     unit_cost: float = Field(..., ge=0, description="Cost per unit")
-    stock_quantity: float = Field(..., ge=0, description="Current stock quantity")
-    prep_time: float = Field(..., ge=0, description="Preparation time in seconds")
+    stock_quantity: float = Field(..., ge=0, description="Current stock quantity")    
 
 
     @field_validator("unit")
