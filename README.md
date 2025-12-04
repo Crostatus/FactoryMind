@@ -1,13 +1,12 @@
-# Factory Production Planner
+# FactoryMind
 
-A Python-based production planning system for optimizing manufacturing operations in a bakery/food production facility. The system uses Mixed-Integer Linear Programming (MILP) to minimize makespan while respecting machine capabilities, material availability, and operational constraints.
+A Python-based production planning system for optimizing manufacturing operations. The system uses Mixed-Integer Linear Programming  to minimize makespan while respecting machine capabilities, material availability, and operational constraints.
 
 ## Features
 
-- **Production Optimization**: MILP-based task assignment to minimize total production time (makespan)
-- **Material Management**: Automatic stock validation and consumption tracking
+- **Production Optimization**: MILP-based task assignment to minimize total production time
 - **Energy Consumption**: Calculates energy usage based on machine power profiles (idle, loading, production)
-- **Realistic Time Modeling**: Accounts for machine working hours, setup time, loading time, and batch capacities
+- **Realistic Time Modeling**: Accounts for machine working hours, (un)loading time, batch capacities
 - **Data Generation**: Built-in random factory data generator for testing and simulation
 - **Yield Rate Handling**: Considers production waste and calculates actual quantities needed
 
@@ -50,7 +49,7 @@ pip install -r src/requirements.txt
 
 ### Run with static data
 
-Use the pre-defined production data from `src/data/`:
+Use data from `src/data/`:
 
 ```bash
 python3 -m src.main
@@ -67,13 +66,7 @@ python3 -m src.main -g
 Or specify the number of entities to generate:
 
 ```bash
-python3 -m src.main -g --materials 10 --recipes 5 --machines 3 --orders 2
-```
-
-Control order quantities:
-
-```bash
-python3 -m src.main -g --orders 3 --min-quantity 200
+python3 -m src.main -g --materials 10 --recipes 5 --machines 3 --orders 2 --min-quantity 200
 ```
 
 ### Command-line Options
@@ -92,7 +85,7 @@ The planner produces a production schedule showing:
 - **Production assignments**: Which machine produces which recipe
 - **Time estimates**: Individual task times and overall makespan
 - **Energy consumption**: KWh consumption per task and total
-- **Material validation**: Stock availability checks with detailed warnings
+- **Material validation**: Stock availability checks
 
 Example output:
 ```
