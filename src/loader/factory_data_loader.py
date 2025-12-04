@@ -219,6 +219,7 @@ class FactoryDataLoader:
                     nominal_power_kw=schema.nominal_power_kw,
                     power_profile=power_profile,                    
                     loading_rates=loading_rates,
+                    max_working_hours_per_day=schema.max_working_hours_per_day,
                 )
 
                 self.machines[machine.name] = machine

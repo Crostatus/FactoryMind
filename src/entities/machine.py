@@ -60,11 +60,13 @@ class Machine:
         nominal_power_kw: float,
         power_profile: dict[MachinePowerProfile, float] | None = None,        
         loading_rates: Optional[MachineLoadingRates] = None,
+        max_working_hours_per_day: int = 24,
     ):
         self.name = name
         self.nominal_power_kw = nominal_power_kw
         self.power_profile = PowerProfile(power_profile)        
         self.loading_rates = loading_rates or MachineLoadingRates()
+        self.max_working_hours_per_day = max_working_hours_per_day
         self.settings: list[MachineRecipeSetting] = []  # collegamenti ricette -> macchina
     
     def add_setting(self, setting: MachineRecipeSetting):
@@ -108,6 +110,9 @@ class Machine:
         for k, v in self.power_profile.items.items():            
             lines.append(f"      {k}: {str_quant(v*100, Unit.PERCENT)} of nominal")
      
+        if self.max_working_hours_per_day != 24:
+            lines.append(f"  - Max working hours per day: {self.max_working_hours_per_day}")
+        
         lines.append("  - Loading rates:")
         for key, value in self.loading_rates.by_unit.items():
              lines.append(f"      {key}: {value}")

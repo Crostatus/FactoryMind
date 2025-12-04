@@ -42,7 +42,7 @@ class FactoryDataGenerator:
         self.machine_recipe_settings_path = self.output_dir / machine_recipe_settings_file
         self.orders_path = self.output_dir / orders_file
         
-        log.info(f"FactoryDataGenerator initialized with output directory: {self.output_dir}")
+        log.info(f"Data generator initialized with output directory: {self.output_dir}")
     
     def generate_materials(self, count: int = None) -> list[dict]:
         """
@@ -335,15 +335,20 @@ class FactoryDataGenerator:
                 
                 material_loading_rate[unit] = rate
             
+            
+            # Generate max working hours per day (8-24)
+            max_working_hours_per_day = random.randint(8, 24)
+            
             machine = {
                 "name": name,
                 "nominal_power_kw": nominal_power_kw,
+                "max_working_hours_per_day": max_working_hours_per_day,
                 "power_profile": power_profile,
                 "material_loading_rate": material_loading_rate
             }
             
             machines.append(machine)
-            log.trace(f"Generated machine: {name} (power={nominal_power_kw}kW, {len(material_loading_rate)} loading rates)")
+            log.trace(f"Generated machine: {name} (power={nominal_power_kw}kW, max_hours={max_working_hours_per_day}h/day, {len(material_loading_rate)} loading rates)")
         
         log.success(f"Generated {len(machines)} machines")
         return machines
@@ -389,7 +394,7 @@ class FactoryDataGenerator:
             settings.append(setting)
             covered_recipes.add(recipe_name)
             
-            log.trace(f"Assigned recipe '{recipe_name}' to machine '{machine_name}'")
+            #log.trace(f"Assigned recipe '{recipe_name}' to machine '{machine_name}'")
         
         # Second pass: optionally add more settings (some recipes can be produced by multiple machines)
         # Add 0-2 extra settings per recipe for variety
@@ -475,13 +480,14 @@ class FactoryDataGenerator:
         
         return setting
     
-    def generate_orders(self, recipes: list[dict], count: int = None) -> list[dict]:
+    def generate_orders(self, recipes: list[dict], count: int = None, min_quantity: float = None) -> list[dict]:
         """
         Generate a list of N random orders.
         
         Args:
             recipes: List of recipe dictionaries (must have 'name', 'output_unit' keys)
             count: Number of orders to generate. If None, chooses random between 1 and 3.
+            min_quantity: Minimum quantity for each recipe item. If None, uses defaults (50 for pieces, 5.0 for kg/L)
             
         Returns:
             List of order dictionaries ready to be saved as JSON
@@ -527,11 +533,13 @@ class FactoryDataGenerator:
                 recipe_name = recipe["name"]
                 recipe_output_unit = recipe["output_unit"]
                 
-                # If recipe output unit is piece, quantity must be integer
+                # Determine min and max quantities based on unit and min_quantity parameter
                 if recipe_output_unit == Unit.PIECE.value:
-                    quantity = random.randint(50, 1000)
+                    min_qty = int(min_quantity) if min_quantity is not None else 50
+                    quantity = random.randint(min_qty, 1000)
                 else:
-                    quantity = round(random.uniform(5.0, 100.0), 2)
+                    min_qty = min_quantity if min_quantity is not None else 5.0
+                    quantity = round(random.uniform(min_qty, 100.0), 2)
                 
                 items.append({
                     "recipe": recipe_name,
@@ -554,7 +562,8 @@ class FactoryDataGenerator:
         num_materials: int = None,
         num_recipes: int = None,
         num_machines: int = None,
-        num_orders: int = None
+        num_orders: int = None,
+        min_order_quantity: float = None
     ) -> dict:
         """
         Generate all factory data and save to JSON files.
@@ -564,35 +573,28 @@ class FactoryDataGenerator:
             num_recipes: Number of recipes to generate (default: random 3-10)
             num_machines: Number of machines to generate (default: random 2-5)
             num_orders: Number of orders to generate (default: random 1-3)
+            min_order_quantity: Minimum quantity for each recipe in orders (default: 50 for pieces, 5.0 for kg/L)
             
         Returns:
             Dictionary with counts of generated items
         """
-        log.info("="*60)
-        log.info("STARTING COMPLETE DATA GENERATION")
-        log.info("="*60)
+
+        log.info("Starting data generation...")
         
         # Generate all data in dependency order
         materials = self.generate_materials(count=num_materials)
         recipes = self.generate_recipes(materials, count=num_recipes)
         machines = self.generate_machines(materials, count=num_machines)
         settings = self.generate_machine_recipe_settings(machines, recipes)
-        orders = self.generate_orders(recipes, count=num_orders)
+        orders = self.generate_orders(recipes, count=num_orders, min_quantity=min_order_quantity)
         
-        # Save to files
-        log.info("\n" + "="*60)
-        log.info("SAVING DATA TO FILES")
-        log.info("="*60)
-        
+        # Save to files        
+        log.info("Saving generated data to files...")                
         self.save_to_json(materials, self.materials_path, "materials")
         self.save_to_json(recipes, self.recipes_path, "recipes")
         self.save_to_json(machines, self.machines_path, "machines")
         self.save_to_json(settings, self.machine_recipe_settings_path, "machine recipe settings")
         self.save_to_json(orders, self.orders_path, "orders")
-        
-        log.info("\n" + "="*60)
-        log.success("COMPLETE DATA GENERATION FINISHED")
-        log.info("="*60)
         
         # Return summary
         summary = {
@@ -603,14 +605,8 @@ class FactoryDataGenerator:
             "orders": len(orders),
             "output_dir": str(self.output_dir)
         }
-        
-        log.info(f"\nGenerated and saved:")
-        log.info(f"  - {summary['materials']} materials → {self.materials_path.name}")
-        log.info(f"  - {summary['recipes']} recipes → {self.recipes_path.name}")
-        log.info(f"  - {summary['machines']} machines → {self.machines_path.name}")
-        log.info(f"  - {summary['settings']} settings → {self.machine_recipe_settings_path.name}")
-        log.info(f"  - {summary['orders']} orders → {self.orders_path.name}")
-        log.info(f"\nAll files saved to: {summary['output_dir']}")
+                
+        log.info(f"All files saved to: {summary['output_dir']}\n\n")
         
         return summary
     
@@ -627,7 +623,7 @@ class FactoryDataGenerator:
             with open(file_path, 'w', encoding='utf-8') as f:
                 json.dump(data, f, indent=2, ensure_ascii=False)
             
-            log.success(f"Saved {len(data)} {data_type} to '{file_path.name}'")
+            log.debug(f"Saved {len(data)} {data_type} to '{file_path.name}'")
         except Exception as e:
             log.error(f"Failed to save {data_type} to '{file_path.name}': {e}")
             raise

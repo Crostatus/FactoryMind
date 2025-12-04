@@ -50,6 +50,7 @@ class RecipeSchema(BaseModel):
 class MachineSchema(BaseModel):
     name: str = Field(..., min_length=1)
     nominal_power_kw: float = Field(..., gt=0)
+    max_working_hours_per_day: int = Field(24, ge=1, le=24)
 
     power_profile: dict[str, float] = Field(default_factory=dict)
     material_loading_rate: dict[str, float] = Field(default_factory=dict)

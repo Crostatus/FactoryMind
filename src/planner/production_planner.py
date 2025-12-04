@@ -41,6 +41,9 @@ class ProductionPlanner:
                         recipe=recipe,
                         requested_quantity=quantity,                        
                     )
+                    if not candidate.is_valid():
+                        continue
+
                     candidates.append(candidate)
                     machines_that_can_produce += 1
                     log.trace(f"Created {candidate}")                
@@ -156,5 +159,5 @@ class ProductionPlanner:
                     log.info(f"Assigned '{recipe_name}' to {machine_name} (Time: {cand.estimated_time:.2f}s)")
                     break
 
-        log.info(f"Optimized Makespan: {pulp.value(makespan):.2f}s")
+        log.info(f"Optimized makespan: {pulp.value(makespan):.2f}s")
         return selected_candidates
